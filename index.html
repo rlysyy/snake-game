@@ -173,6 +173,49 @@
             text-align: center;
             letter-spacing: 1px;
         }
+
+        .touch-controls {
+            display: none;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .game-board, .score-panel {
+                width: 90vw !important;
+                max-width: 400px;
+            }
+            .game-board {
+                height: 90vw !important;
+                max-height: 400px;
+            }
+            .touch-controls {
+                display: grid;
+                grid-template-columns: repeat(3, 60px);
+                gap: 10px;
+            }
+            .touch-btn {
+                width: 60px;
+                height: 60px;
+                background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%);
+                border: 2px solid #3d3d54;
+                border-radius: 12px;
+                color: #00ff88;
+                font-size: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                user-select: none;
+                -webkit-user-select: none;
+                touch-action: manipulation;
+            }
+            .touch-btn:active {
+                background: linear-gradient(135deg, #3d3d54 0%, #2d2d44 100%);
+                transform: scale(0.95);
+            }
+            .touch-placeholder {
+                visibility: hidden;
+            }
+        }
     </style>
 </head>
 <body>
@@ -204,6 +247,18 @@
         </div>
         
         <div class="instructions">Use Arrow Keys to Move</div>
+        
+        <div class="touch-controls">
+            <div class="touch-placeholder"></div>
+            <button class="touch-btn" data-dir="up">↑</button>
+            <div class="touch-placeholder"></div>
+            <button class="touch-btn" data-dir="left">←</button>
+            <div class="touch-placeholder"></div>
+            <button class="touch-btn" data-dir="right">→</button>
+            <div class="touch-placeholder"></div>
+            <button class="touch-btn" data-dir="down">↓</button>
+            <div class="touch-placeholder"></div>
+        </div>
     </div>
 
     <script>
@@ -362,6 +417,55 @@
         
         startBtn.addEventListener('click', startGame);
         restartBtn.addEventListener('click', startGame);
+        
+        // Touch button controls
+        document.querySelectorAll('.touch-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!isPlaying) return;
+                
+                const dirMap = {
+                    'up': { x: 0, y: -1 },
+                    'down': { x: 0, y: 1 },
+                    'left': { x: -1, y: 0 },
+                    'right': { x: 1, y: 0 }
+                };
+                
+                const newDir = dirMap[btn.dataset.dir];
+                if (newDir && (newDir.x !== -direction.x || newDir.y !== -direction.y)) {
+                    nextDirection = newDir;
+                }
+            });
+        });
+        
+        // Swipe controls
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        canvas.addEventListener('touchend', (e) => {
+            if (!isPlaying) return;
+            
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            const minSwipe = 30;
+            
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > minSwipe) {
+                const newDir = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+                if (newDir.x !== -direction.x) nextDirection = newDir;
+            } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > minSwipe) {
+                const newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+                if (newDir.y !== -direction.y) nextDirection = newDir;
+            }
+        }, { passive: true });
         
         initGame();
         draw();
