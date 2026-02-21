@@ -480,24 +480,64 @@
             }
         }
 
-        /* 响应式 */
+        /* 响应式 - 移动端优化 */
         @media (max-width: 768px) {
+            body {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                touch-action: none;
+            }
+            
+            .game-wrapper {
+                padding: 10px;
+                gap: 10px;
+                height: 100vh;
+                justify-content: space-between;
+            }
+            
+            .game-header {
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+            
             .game-title {
-                font-size: 36px;
+                font-size: 28px;
+            }
+            
+            .game-subtitle {
+                font-size: 10px;
+                letter-spacing: 4px;
             }
             
             .info-panel {
                 width: 100%;
-                max-width: 350px;
+                max-width: 320px;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+            
+            .info-card {
+                padding: 8px 12px;
+            }
+            
+            .info-label {
+                font-size: 9px;
+            }
+            
+            .info-value {
+                font-size: 18px;
             }
             
             .game-board-wrapper {
                 padding: 2px;
+                flex-shrink: 0;
             }
             
             .game-board {
-                width: 350px;
-                height: 350px;
+                width: min(320px, 90vw);
+                height: min(320px, 90vw);
             }
             
             #gameCanvas {
@@ -507,6 +547,20 @@
             
             .touch-controls {
                 display: block;
+                margin-top: 0;
+                flex-shrink: 0;
+                padding-bottom: 10px;
+            }
+            
+            .touch-grid {
+                grid-template-columns: repeat(3, 60px);
+                gap: 6px;
+            }
+            
+            .touch-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
             }
             
             .controls-hint {
@@ -885,6 +939,7 @@
         document.querySelectorAll('.touch-btn').forEach(btn => {
             btn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 if (!isPlaying) return;
                 
                 const dirMap = {
@@ -898,19 +953,25 @@
                 if (newDir && (newDir.x !== -direction.x || newDir.y !== -direction.y)) {
                     nextDirection = newDir;
                 }
-            });
+            }, { passive: false });
         });
         
-        // 滑动手势
+        // 滑动手势 - 阻止页面滚动
         let touchStartX = 0;
         let touchStartY = 0;
         
         canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
-        }, { passive: true });
+        }, { passive: false });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
         
         canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
             if (!isPlaying) return;
             
             const touchEndX = e.changedTouches[0].clientX;
@@ -928,7 +989,14 @@
                 const newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
                 if (newDir.y !== -direction.y) nextDirection = newDir;
             }
-        }, { passive: true });
+        }, { passive: false });
+        
+        // 阻止页面滚动
+        document.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.game-board') || e.target.closest('.touch-controls')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
         
         // 背景粒子效果
         const particleCanvas = document.getElementById('particles');
